@@ -270,9 +270,9 @@ export class BaseConfig implements VideoCodecSWConfig {
 
   getColors() {
     return {
-      primaries: 'bt709',
-      transfer: 'bt709',
-      matrix: 'bt709',
+      primaries: '709',
+      transfer: '709',
+      matrix: '709',
     };
   }
 
@@ -424,16 +424,16 @@ export class ThumbnailConfig extends BaseConfig {
   getScaling(videoStream: VideoStreamInfo) {
     let options = super.getScaling(videoStream) + ':flags=lanczos+accurate_rnd+full_chroma_int';
     if (!this.shouldToneMap(videoStream)) {
-      options += ':out_color_matrix=601:out_range=pc';
+      options += ':out_color_matrix=bt601:out_range=pc';
     }
     return options;
   }
 
   getColors() {
     return {
-      primaries: 'bt709',
+      primaries: '709',
       transfer: '601',
-      matrix: 'bt470bg',
+      matrix: '470bg',
     };
   }
 }
@@ -492,6 +492,10 @@ export class VP9Config extends BaseConfig {
 }
 
 export class AV1Config extends BaseConfig {
+  getVideoCodec(): string {
+    return 'libsvtav1';
+  }
+
   getPresetOptions() {
     const speed = this.getPresetIndex() + 4; // Use 4 as slowest, giving us an effective range of 4-12 which is far more useful than 0-8
     if (speed >= 0) {
@@ -646,6 +650,14 @@ export class NvencHwDecodeConfig extends NvencSwDecodeConfig {
   getOutputThreadOptions() {
     return [];
   }
+
+  getColors() {
+    return {
+      primaries: 'bt709',
+      transfer: 'bt709',
+      matrix: 'bt709',
+    };
+  }
 }
 
 export class QsvSwDecodeConfig extends BaseHWConfig {
@@ -788,6 +800,14 @@ export class QsvHwDecodeConfig extends QsvSwDecodeConfig {
 
   getInputThreadOptions() {
     return [`-threads 1`];
+  }
+
+  getColors() {
+    return {
+      primaries: 'bt709',
+      transfer: 'bt709',
+      matrix: 'bt709',
+    };
   }
 }
 
@@ -935,5 +955,13 @@ export class RkmppHwDecodeConfig extends RkmppSwDecodeConfig {
       return [`scale_rkrga=${this.getScaling(videoStream)}:format=nv12:afbc=1`];
     }
     return [];
+  }
+
+  getColors() {
+    return {
+      primaries: 'bt709',
+      transfer: 'bt709',
+      matrix: 'bt709',
+    };
   }
 }

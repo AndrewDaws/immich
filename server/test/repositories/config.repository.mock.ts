@@ -8,6 +8,12 @@ const envData: EnvData = {
   environment: ImmichEnvironment.PRODUCTION,
 
   buildMetadata: {},
+  bull: {
+    config: {
+      prefix: 'immich_bull',
+    },
+    queues: [{ name: 'queue-1' }],
+  },
 
   database: {
     host: 'database',
@@ -23,6 +29,12 @@ const envData: EnvData = {
   licensePublicKey: {
     client: 'client-public-key',
     server: 'server-public-key',
+  },
+
+  redis: {
+    host: 'redis',
+    port: 6379,
+    db: 0,
   },
 
   resourcePaths: {
@@ -49,10 +61,9 @@ const envData: EnvData = {
   noColor: false,
 };
 
+export const mockEnvData = (config: Partial<EnvData>) => ({ ...envData, ...config });
 export const newConfigRepositoryMock = (): Mocked<IConfigRepository> => {
   return {
-    getEnv: vitest.fn().mockReturnValue(envData),
+    getEnv: vitest.fn().mockReturnValue(mockEnvData({})),
   };
 };
-
-export const mockEnvData = (config: Partial<EnvData>) => ({ ...envData, ...config });

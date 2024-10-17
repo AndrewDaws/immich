@@ -8,9 +8,6 @@ import { OnEvent } from 'src/decorators';
 import {
   AuthDto,
   ChangePasswordDto,
-  ImmichCookie,
-  ImmichHeader,
-  ImmichQuery,
   LoginCredentialDto,
   LogoutResponseDto,
   OAuthAuthorizeResponseDto,
@@ -21,7 +18,7 @@ import {
 } from 'src/dtos/auth.dto';
 import { UserAdminResponseDto, mapUserAdmin } from 'src/dtos/user.dto';
 import { UserEntity } from 'src/entities/user.entity';
-import { AuthType, Permission } from 'src/enum';
+import { AuthType, ImmichCookie, ImmichHeader, ImmichQuery, Permission } from 'src/enum';
 import { OAuthProfile } from 'src/interfaces/oauth.interface';
 import { BaseService } from 'src/services/base.service';
 import { isGranted } from 'src/utils/access';
@@ -188,13 +185,13 @@ export class AuthService extends BaseService {
       throw new BadRequestException('OAuth is not enabled');
     }
 
-    const url = await this.oauthRepository.authorize(oauth, dto.redirectUri);
+    const url = await this.oauthRepository.authorize(oauth, this.resolveRedirectUri(oauth, dto.redirectUri));
     return { url };
   }
 
   async callback(dto: OAuthCallbackDto, loginDetails: LoginDetails) {
     const { oauth } = await this.getConfig({ withCache: false });
-    const profile = await this.oauthRepository.getProfile(oauth, dto.url, this.normalize(oauth, dto.url.split('?')[0]));
+    const profile = await this.oauthRepository.getProfile(oauth, dto.url, this.resolveRedirectUri(oauth, dto.url));
     const { autoRegister, defaultStorageQuota, storageLabelClaim, storageQuotaClaim } = oauth;
     this.logger.debug(`Logging in with OAuth: ${JSON.stringify(profile)}`);
     let user = await this.userRepository.getByOAuthId(profile.sub);
@@ -257,7 +254,7 @@ export class AuthService extends BaseService {
     const { sub: oauthId } = await this.oauthRepository.getProfile(
       oauth,
       dto.url,
-      this.normalize(oauth, dto.url.split('?')[0]),
+      this.resolveRedirectUri(oauth, dto.url),
     );
     const duplicate = await this.userRepository.getByOAuthId(oauthId);
     if (duplicate && duplicate.id !== auth.user.id) {
@@ -369,10 +366,11 @@ export class AuthService extends BaseService {
     return options.isValid(value) ? (value as T) : options.default;
   }
 
-  private normalize(
+  private resolveRedirectUri(
     { mobileRedirectUri, mobileOverrideEnabled }: { mobileRedirectUri: string; mobileOverrideEnabled: boolean },
-    redirectUri: string,
+    url: string,
   ) {
+    const redirectUri = url.split('?')[0];
     const isMobile = redirectUri.startsWith('app.immich:/');
     if (isMobile && mobileOverrideEnabled && mobileRedirectUri) {
       return mobileRedirectUri;
